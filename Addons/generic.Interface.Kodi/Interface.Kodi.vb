@@ -126,6 +126,12 @@ Public Class KodiInterface
         End Set
     End Property
 
+    ReadOnly Property IsBusy() As Boolean Implements Interfaces.GenericModule.IsBusy
+        Get
+            Return Not TasksDone
+        End Get
+    End Property
+
     ReadOnly Property ModuleName() As String Implements Interfaces.GenericModule.ModuleName
         Get
             Return _Name
@@ -158,8 +164,7 @@ Public Class KodiInterface
     Public Function RunGeneric(ByVal mType As Enums.ModuleEventType, ByRef _params As List(Of Object), ByRef _singleobjekt As Object, ByRef _dbelement As Database.DBElement) As Interfaces.ModuleResult Implements Interfaces.GenericModule.RunGeneric
         If Not Master.isCL Then
             'add job to tasklist and get everything done
-            TaskList.Enqueue(New KodiTask With {.mType = mType, .mDBElement = _dbelement})
-            If TasksDone Then RunTasks()
+            AddTask(New KodiTask With {.mType = mType, .mDBElement = _dbelement})
             Return New Interfaces.ModuleResult With {.breakChain = False}
         Else
             Dim mDBElement As Database.DBElement = _dbelement
@@ -175,6 +180,15 @@ Public Class KodiInterface
         Dim GenericEventProgressAsync = New Progress(Of GenericEventCallBackAsync)(GenericEventActionAsync)
         Return Await Task.Run(Function() GenericRunCallBack(mType, mDBElement, GenericEventProgressAsync))
     End Function
+
+    Private Sub AddTask(ByRef nTask As KodiTask)
+        TaskList.Enqueue(nTask)
+        If TasksDone Then
+            RunTasks()
+        Else
+            ChangeTaskManagerStatus(lblTaskManagerStatus, String.Concat("Pending Tasks: ", (TaskList.Count + 1).ToString))
+        End If
+    End Sub
 
     Private Async Sub RunTasks()
         Dim getError As Boolean = False
@@ -901,8 +915,7 @@ Public Class KodiInterface
                 If DBElement.IsOnline OrElse FileUtils.Common.CheckOnlineStatus_Movie(DBElement, True) Then
                     If Not String.IsNullOrEmpty(DBElement.NfoPath) Then
                         'add job to tasklist and get everything done
-                        TaskList.Enqueue(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_Movie})
-                        If TasksDone Then RunTasks()
+                        AddTask(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_Movie})
                     Else
                         ModulesManager.Instance.RunGeneric(Enums.ModuleEventType.Notification, New List(Of Object)(New Object() {"error", 1, Master.eLang.GetString(1422, "Kodi Interface"), Master.eLang.GetString(1442, "Please Scrape In Ember First!"), Nothing}))
                     End If
@@ -926,8 +939,7 @@ Public Class KodiInterface
                 Dim DBElement As Database.DBElement = Master.DB.LoadMovieSetFromDB(ID)
                 If Not String.IsNullOrEmpty(DBElement.MovieSet.Title) Then
                     'add job to tasklist and get everything done
-                    TaskList.Enqueue(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_MovieSet})
-                    If TasksDone Then RunTasks()
+                    AddTask(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_MovieSet})
                 Else
                     ModulesManager.Instance.RunGeneric(Enums.ModuleEventType.Notification, New List(Of Object)(New Object() {"error", 1, Master.eLang.GetString(1422, "Kodi Interface"), Master.eLang.GetString(1442, "Please Scrape In Ember First!"), Nothing}))
                 End If
@@ -949,12 +961,11 @@ Public Class KodiInterface
         If Host IsNot Nothing Then
             For Each sRow As DataGridViewRow In ModulesManager.Instance.RuntimeObjects.MediaListTVEpisodes.SelectedRows
                 Dim ID As Long = Convert.ToInt64(sRow.Cells("idEpisode").Value)
-                Dim DBElement As Database.DBElement = Master.DB.LoadTVEpisodeFromDB(ID, True, False)
+                Dim DBElement As Database.DBElement = Master.DB.LoadTVEpisodeFromDB(ID, True)
                 If DBElement.IsOnline OrElse FileUtils.Common.CheckOnlineStatus_TVEpisode(DBElement, True) Then
                     If Not String.IsNullOrEmpty(DBElement.NfoPath) Then
                         'add job to tasklist and get everything done
-                        TaskList.Enqueue(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVEpisode})
-                        If TasksDone Then RunTasks()
+                        AddTask(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVEpisode})
                     Else
                         ModulesManager.Instance.RunGeneric(Enums.ModuleEventType.Notification, New List(Of Object)(New Object() {"error", 1, Master.eLang.GetString(1422, "Kodi Interface"), Master.eLang.GetString(1442, "Please Scrape In Ember First!"), Nothing}))
                     End If
@@ -980,8 +991,7 @@ Public Class KodiInterface
                 Dim DBElement As Database.DBElement = Master.DB.LoadTVSeasonFromDB(ID, True, False)
                 If DBElement.IsOnline OrElse FileUtils.Common.CheckOnlineStatus_TVShow(DBElement, True) Then
                     'add job to tasklist and get everything done
-                    TaskList.Enqueue(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVSeason})
-                    If TasksDone Then RunTasks()
+                    AddTask(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVSeason})
                 End If
             Next
         Else
@@ -1004,8 +1014,7 @@ Public Class KodiInterface
                 Dim DBElement As Database.DBElement = Master.DB.LoadTVSeasonFromDB(ID, True, True)
                 If DBElement.IsOnline OrElse FileUtils.Common.CheckOnlineStatus_TVShow(DBElement, True) Then
                     'add job to tasklist and get everything done
-                    TaskList.Enqueue(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVSeason})
-                    If TasksDone Then RunTasks()
+                    AddTask(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVSeason})
                 End If
             Next
         Else
@@ -1029,8 +1038,7 @@ Public Class KodiInterface
                 If DBElement.IsOnline OrElse FileUtils.Common.CheckOnlineStatus_TVShow(DBElement, True) Then
                     If Not String.IsNullOrEmpty(DBElement.NfoPath) Then
                         'add job to tasklist and get everything done
-                        TaskList.Enqueue(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVShow})
-                        If TasksDone Then RunTasks()
+                        AddTask(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVShow})
                     Else
                         ModulesManager.Instance.RunGeneric(Enums.ModuleEventType.Notification, New List(Of Object)(New Object() {"error", 1, Master.eLang.GetString(1422, "Kodi Interface"), Master.eLang.GetString(1442, "Please Scrape In Ember First!"), Nothing}))
                     End If
@@ -1057,8 +1065,7 @@ Public Class KodiInterface
                 If DBElement.IsOnline OrElse FileUtils.Common.CheckOnlineStatus_TVShow(DBElement, True) Then
                     If Not String.IsNullOrEmpty(DBElement.NfoPath) Then
                         'add job to tasklist and get everything done
-                        TaskList.Enqueue(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVShow})
-                        If TasksDone Then RunTasks()
+                        AddTask(New KodiTask With {.mDBElement = DBElement, .mHost = Host, .mType = Enums.ModuleEventType.Sync_TVShow})
                     Else
                         ModulesManager.Instance.RunGeneric(Enums.ModuleEventType.Notification, New List(Of Object)(New Object() {"error", 1, Master.eLang.GetString(1422, "Kodi Interface"), Master.eLang.GetString(1442, "Please Scrape In Ember First!"), Nothing}))
                     End If
@@ -1081,8 +1088,7 @@ Public Class KodiInterface
             ModulesManager.Instance.RunGeneric(Enums.ModuleEventType.Notification, New List(Of Object)(New Object() {"info", 1, Master.eLang.GetString(1422, "Kodi Interface"), Host.Label & " | " & Master.eLang.GetString(1450, "Cleaning Video Library..."), New Bitmap(My.Resources.logo)}))
 
             'add job to tasklist and get everything done
-            TaskList.Enqueue(New KodiTask With {.mHost = Host, .mInternalType = InternalType.CleanVideoLibrary, .mType = Enums.ModuleEventType.Task})
-            If TasksDone Then RunTasks()
+            AddTask(New KodiTask With {.mHost = Host, .mInternalType = InternalType.CleanVideoLibrary, .mType = Enums.ModuleEventType.Task})
         Else
             ModulesManager.Instance.RunGeneric(Enums.ModuleEventType.Notification, New List(Of Object)(New Object() {"info", 1, Master.eLang.GetString(1422, "Kodi Interface"), Master.eLang.GetString(1447, "No Host Configured!"), Nothing}))
         End If
@@ -1100,8 +1106,7 @@ Public Class KodiInterface
             ModulesManager.Instance.RunGeneric(Enums.ModuleEventType.Notification, New List(Of Object)(New Object() {"info", 1, Master.eLang.GetString(1422, "Kodi Interface"), Host.Label & " | " & Master.eLang.GetString(1448, "Updating Video Library..."), New Bitmap(My.Resources.logo)}))
 
             'add job to tasklist and get everything done
-            TaskList.Enqueue(New KodiTask With {.mHost = Host, .mInternalType = InternalType.UpdateVideoLibrary, .mType = Enums.ModuleEventType.Task})
-            If TasksDone Then RunTasks()
+            AddTask(New KodiTask With {.mHost = Host, .mInternalType = InternalType.UpdateVideoLibrary, .mType = Enums.ModuleEventType.Task})
         Else
             ModulesManager.Instance.RunGeneric(Enums.ModuleEventType.Notification, New List(Of Object)(New Object() {"info", 1, Master.eLang.GetString(1422, "Kodi Interface"), Master.eLang.GetString(1447, "No Host Configured!"), Nothing}))
         End If

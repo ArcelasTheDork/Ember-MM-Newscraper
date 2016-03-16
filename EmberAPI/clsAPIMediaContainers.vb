@@ -578,6 +578,13 @@ Namespace MediaContainers
             End Set
         End Property
 
+        <XmlIgnore()>
+        Public ReadOnly Property AnyUniqueIDSpecified() As Boolean
+            Get
+                Return Not String.IsNullOrEmpty(_imdb) OrElse Not String.IsNullOrEmpty(_tmdb) OrElse Not String.IsNullOrEmpty(_tvdb)
+            End Get
+        End Property
+
 #End Region 'Properties
 
 #Region "Methods"
@@ -665,6 +672,8 @@ Namespace MediaContainers
         End Sub
 
         Public Sub SaveAllActorThumbs(ByRef DBElement As Database.DBElement)
+            If Not DBElement.FilenameSpecified Then Return
+
             If ActorsSpecified AndAlso Master.eSettings.TVEpisodeActorThumbsAnyEnabled Then
                 Images.SaveTVEpisodeActorThumbs(DBElement)
             Else
@@ -1671,6 +1680,13 @@ Namespace MediaContainers
                 End Get
             End Property
 
+            <XmlIgnore()>
+            Public ReadOnly Property AnyUniqueIDSpecified() As Boolean
+                Get
+                    Return Not String.IsNullOrEmpty(_imdbid) OrElse Not String.IsNullOrEmpty(_tmdbid)
+                End Get
+            End Property
+
         End Class
 
 #End Region 'Properties
@@ -1976,6 +1992,13 @@ Namespace MediaContainers
             End Get
         End Property
 
+        <XmlIgnore()>
+        Public ReadOnly Property AnyUniqueIDSpecified() As Boolean
+            Get
+                Return Not String.IsNullOrEmpty(_tmdb) OrElse Not String.IsNullOrEmpty(_tmdb)
+            End Get
+        End Property
+
 #End Region 'Properties
 
 #Region "Methods"
@@ -2257,7 +2280,7 @@ Namespace MediaContainers
         <XmlIgnore()>
         Public ReadOnly Property SeasonSpecified() As Boolean
             Get
-                Return Not String.IsNullOrEmpty(_season.ToString)
+                Return Not String.IsNullOrEmpty(_season.ToString) AndAlso Not _season = -1
             End Get
         End Property
 
@@ -2326,6 +2349,13 @@ Namespace MediaContainers
         Public ReadOnly Property TVDBSpecified() As Boolean
             Get
                 Return Not String.IsNullOrEmpty(_tvdb)
+            End Get
+        End Property
+
+        <XmlIgnore()>
+        Public ReadOnly Property AnyUniqueIDSpecified() As Boolean
+            Get
+                Return Not String.IsNullOrEmpty(_tmdb) OrElse Not String.IsNullOrEmpty(_tvdb)
             End Get
         End Property
 
@@ -3076,6 +3106,13 @@ Namespace MediaContainers
             End Get
         End Property
 
+        <XmlIgnore()>
+        Public ReadOnly Property AnyUniqueIDSpecified() As Boolean
+            Get
+                Return Not String.IsNullOrEmpty(_imdb) OrElse Not String.IsNullOrEmpty(_tmdb) OrElse Not String.IsNullOrEmpty(_tvdb)
+            End Get
+        End Property
+
 #End Region 'Properties
 
 #Region "Methods"
@@ -3604,7 +3641,7 @@ Namespace MediaContainers
             End Select
         End Sub
 
-        Public Function LoadAndCache(ByVal tContentType As Enums.ContentType, Optional ByVal needFullsize As Boolean = False, Optional ByVal LoadBitmap As Boolean = False) As Boolean
+        Public Function LoadAndCache(ByVal tContentType As Enums.ContentType, ByVal needFullsize As Boolean, Optional ByVal LoadBitmap As Boolean = False) As Boolean
             Dim doCache As Boolean = False
 
             Select Case tContentType
@@ -3802,7 +3839,7 @@ Namespace MediaContainers
             _poster = New Image
         End Sub
 
-        Public Sub LoadAllImages(ByVal Type As Enums.ContentType, ByVal LoadBitmap As Boolean, ByVal exclExtraImages As Boolean)
+        Public Sub LoadAllImages(ByVal Type As Enums.ContentType, ByVal LoadBitmap As Boolean, ByVal withExtraImages As Boolean)
             Banner.LoadAndCache(Type, True, LoadBitmap)
             CharacterArt.LoadAndCache(Type, True, LoadBitmap)
             ClearArt.LoadAndCache(Type, True, LoadBitmap)
@@ -3812,7 +3849,7 @@ Namespace MediaContainers
             Landscape.LoadAndCache(Type, True, LoadBitmap)
             Poster.LoadAndCache(Type, True, LoadBitmap)
 
-            If Not exclExtraImages Then
+            If withExtraImages Then
                 For Each tImg As Image In Extrafanarts
                     tImg.LoadAndCache(Type, True, LoadBitmap)
                 Next
@@ -3823,6 +3860,8 @@ Namespace MediaContainers
         End Sub
 
         Public Sub SaveAllImages(ByRef DBElement As Database.DBElement)
+            If Not DBElement.FilenameSpecified AndAlso (DBElement.ContentType = Enums.ContentType.Movie OrElse DBElement.ContentType = Enums.ContentType.TVEpisode) Then Return
+
             Dim tContentType As Enums.ContentType = DBElement.ContentType
 
             Select Case tContentType
