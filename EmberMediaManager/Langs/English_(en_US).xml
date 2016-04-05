@@ -466,7 +466,7 @@
   <string id="465">Hide</string>
   <string id="466">Automatically Rename Files After Edit</string>
   <string id="467">Automatically Rename Files After Edit Episodes</string>
-  <string id="468">Automatically Rename Files After DB Update</string>
+  <string id="468">Automatically Rename Files During DB Update</string>
   <string id="469">Episode Files Pattern</string>
   <string id="470">Default TV Renaming Patterns</string>
   <string id="471">File Naming</string>
@@ -1112,7 +1112,7 @@
   <string id="1020">Season {0} Landscape</string>
   <string id="1021">Select Tag</string>
   <string id="1022">There was a problem communicating with host or there are no sources configured in Kodi</string>
-  <string id="1023"></string>
+  <string id="1023">Preselect in "Image Select" dialog</string>
   <string id="1024"></string>
   <string id="1025">All Seasons Banner</string>
   <string id="1026">All Seasons Fanart</string>
@@ -1288,7 +1288,7 @@
   <string id="1196">Remove Trailer</string>
   <string id="1197">No Landscapes found</string>
   <string id="1198">Enable Image Scrape On Double Right Click</string>
-  <string id="1199">Select Language...</string>
+  <string id="1199">Select Language</string>
   <string id="1200">Change Language</string>
   <string id="1201">Language Options</string>
   <string id="1202">All Seasons</string>

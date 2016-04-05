@@ -92,7 +92,7 @@ Namespace Kodi
                 Dim response = Await _kodi.VideoLibrary.GetMovies(Video.Fields.Movie.AllFields).ConfigureAwait(False)
                 Return response
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -111,7 +111,7 @@ Namespace Kodi
                 Dim response = Await _kodi.VideoLibrary.GetMovieSets(Video.Fields.MovieSet.AllFields).ConfigureAwait(False)
                 Return response
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -126,7 +126,7 @@ Namespace Kodi
                 Dim response = Await _kodi.VideoLibrary.GetSeasons(ShowID, Video.Fields.Season.AllFields).ConfigureAwait(False)
                 Return response
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -148,7 +148,7 @@ Namespace Kodi
                 Dim response = Await _kodi.VideoLibrary.GetTVShows(Video.Fields.TVShow.AllFields).ConfigureAwait(False)
                 Return response
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -168,7 +168,7 @@ Namespace Kodi
                     Dim KodiElement As VideoLibrary.GetMovieDetailsResponse = Await _kodi.VideoLibrary.GetMovieDetails(iKodiID, Video.Fields.Movie.AllFields).ConfigureAwait(False)
                     If KodiElement IsNot Nothing AndAlso KodiElement.moviedetails IsNot Nothing Then Return KodiElement.moviedetails
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                     Return Nothing
                 End Try
             End If
@@ -190,7 +190,7 @@ Namespace Kodi
                     Dim KodiElement As VideoLibrary.GetMovieSetDetailsResponse = Await _kodi.VideoLibrary.GetMovieSetDetails(iKodiID, Video.Fields.MovieSet.AllFields).ConfigureAwait(False)
                     If KodiElement IsNot Nothing AndAlso KodiElement.setdetails IsNot Nothing Then Return KodiElement.setdetails
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                     Return Nothing
                 End Try
             End If
@@ -212,7 +212,7 @@ Namespace Kodi
                     Dim KodiElement As VideoLibrary.GetEpisodeDetailsResponse = Await _kodi.VideoLibrary.GetEpisodeDetails(iKodiID, Video.Fields.Episode.AllFields).ConfigureAwait(False)
                     If KodiElement IsNot Nothing AndAlso KodiElement.episodedetails IsNot Nothing Then Return KodiElement.episodedetails
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                     Return Nothing
                 End Try
             End If
@@ -234,7 +234,7 @@ Namespace Kodi
                     Dim KodiElement As VideoLibrary.GetSeasonDetailsResponse = Await _kodi.VideoLibrary.GetSeasonDetails(iKodiID, Video.Fields.Season.AllFields).ConfigureAwait(False)
                     If KodiElement IsNot Nothing AndAlso KodiElement.seasondetails IsNot Nothing Then Return KodiElement.seasondetails
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                     Return Nothing
                 End Try
             End If
@@ -256,7 +256,7 @@ Namespace Kodi
                     Dim KodiElement As VideoLibrary.GetTVShowDetailsResponse = Await _kodi.VideoLibrary.GetTVShowDetails(iKodiID, Video.Fields.TVShow.AllFields).ConfigureAwait(False)
                     If KodiElement IsNot Nothing AndAlso KodiElement.tvshowdetails IsNot Nothing Then Return KodiElement.tvshowdetails
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                     Return Nothing
                 End Try
             End If
@@ -274,7 +274,7 @@ Namespace Kodi
                 Dim _APIKodi As New Kodi.APIKodi(kHost)
                 Return _APIKodi.GetHostJSONVersion.Result
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return String.Empty
             End Try
         End Function
@@ -313,7 +313,7 @@ Namespace Kodi
                 End Select
                 Return codename & response.version.major.ToString & "." & response.version.minor
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return ""
             End Try
         End Function
@@ -373,8 +373,14 @@ Namespace Kodi
                         Next
                         tPathAndFilename.strPath = Directory.GetParent(Directory.GetParent(tDBElement.Filename).FullName).FullName
                     Else
-                        tPathAndFilename.strFilename = Path.GetFileName(tDBElement.Filename)
-                        tPathAndFilename.strPath = Directory.GetParent(tDBElement.Filename).FullName
+                        If StringUtils.IsStacked(Path.GetFileName(tDBElement.Filename)) Then
+                            tPathAndFilename.bIsMultiPart = True
+                            tPathAndFilename.strFilename = tDBElement.Filename
+                            tPathAndFilename.strPath = Directory.GetParent(tDBElement.Filename).FullName
+                        Else
+                            tPathAndFilename.strFilename = Path.GetFileName(tDBElement.Filename)
+                            tPathAndFilename.strPath = Directory.GetParent(tDBElement.Filename).FullName
+                        End If
                     End If
                 Case Enums.ContentType.TVShow
                     tPathAndFilename.strPath = tDBElement.ShowPath
@@ -438,6 +444,11 @@ Namespace Kodi
         ''' <returns></returns>
         ''' <remarks>ATTENTION: It's not allowed to use "Remotepath.ToLower" (Kodi can't find UNC sources with wrong case)</remarks>
         Private Function GetRemotePath_MovieSet(ByVal strLocalPath As String) As String
+            If String.IsNullOrEmpty(_currenthost.MovieSetArtworksPath) Then
+                logger.Error(String.Format("[APIKodi] [{0}] [GetRemotePath_MovieSet]: No MovieSet Artwork path definied for this host!", _currenthost.Label))
+                Return Nothing
+            End If
+
             Dim HostPath As String = _currenthost.MovieSetArtworksPath
             Dim RemotePath As String = String.Empty
             Dim RemoteIsUNC As Boolean = False
@@ -596,7 +607,7 @@ Namespace Kodi
                     Dim response As Textures.GetTexturesResponse = Await _kodi.Textures.GetTextures(filter, Textures.Fields.Texture.AllFields)
                     Return response
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                     Return Nothing
                 End Try
             End If
@@ -612,7 +623,7 @@ Namespace Kodi
             Dim kMovies As VideoLibrary.GetMoviesResponse
 
             Dim tPathAndFilename As PathAndFilename = GetPathAndFilename(tDBElement)
-            Dim strFilename As String = tPathAndFilename.strFilename
+            Dim strFilename As String = If(tPathAndFilename.bIsMultiPart, GetRemotePath(tPathAndFilename.strFilename), tPathAndFilename.strFilename)
             Dim strRemotePath As String = GetRemotePath(tPathAndFilename.strPath)
 
             If Not String.IsNullOrEmpty(strRemotePath) Then
@@ -625,13 +636,13 @@ Namespace Kodi
                     filter.and.Add(filterRule_Path)
                     Dim filterRule_Filename As New List.Filter.Rule.Movies
                     filterRule_Filename.field = List.Filter.Fields.Movies.filename
-                    filterRule_Filename.Operator = List.Filter.Operators.Is
+                    filterRule_Filename.Operator = If(tPathAndFilename.bIsMultiPart, List.Filter.Operators.contains, List.Filter.Operators.Is)
                     filterRule_Filename.value = strFilename
                     filter.and.Add(filterRule_Filename)
 
                     kMovies = Await _kodi.VideoLibrary.GetMovies(filter).ConfigureAwait(False)
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                     Return Nothing
                 End Try
             Else
@@ -723,7 +734,7 @@ Namespace Kodi
             Dim kTVEpisodes As VideoLibrary.GetEpisodesResponse
 
             Dim tPathAndFilename As PathAndFilename = GetPathAndFilename(tDBElement)
-            Dim strFilename As String = tPathAndFilename.strFilename
+            Dim strFilename As String = If(tPathAndFilename.bIsMultiPart, GetRemotePath(tPathAndFilename.strFilename), tPathAndFilename.strFilename)
             Dim strRemotePath As String = GetRemotePath(tPathAndFilename.strPath)
 
             If Not String.IsNullOrEmpty(strRemotePath) Then
@@ -742,7 +753,7 @@ Namespace Kodi
 
                     kTVEpisodes = Await _kodi.VideoLibrary.GetEpisodes(filter, ShowID, tDBElement.TVEpisode.Season, Video.Fields.Episode.AllFields).ConfigureAwait(False)
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                     Return Nothing
                 End Try
             Else
@@ -843,7 +854,7 @@ Namespace Kodi
                     kTVShows = Await _kodi.VideoLibrary.GetTVShows(filter).ConfigureAwait(False)
 
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                     Return Nothing
                 End Try
             Else
@@ -878,7 +889,7 @@ Namespace Kodi
                 Dim Response = Await _kodi.JSONRPC.Ping
                 Return True
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 logger.Error(String.Format("[APIKodi] [{0}] TestConnectionToHost | No connection to Host!", _currenthost.Label))
                 Return False
             End Try
@@ -1057,7 +1068,7 @@ Namespace Kodi
                         End If
                         If bNeedSave Then
                             logger.Trace(String.Format("[APIKodi] [{0}] UpdateMovieInfo: ""{1}"" | Save Playcount from host", _currenthost.Label, mDBElement.Movie.Title))
-                            Master.DB.SaveMovieToDB(mDBElement, False, False, True, False)
+                            Master.DB.SaveMovieToDB(mDBElement, False, True, False)
                             GenericSubEvent.Report(New GenericSubEventCallBackAsync With {
                                                    .tGenericEventCallBackAsync = New GenericEventCallBackAsync With
                                                    {.tEventType = Enums.ModuleEventType.AfterEdit_Movie, .tParams = New List(Of Object)(New Object() {mDBElement.ID})},
@@ -1072,7 +1083,7 @@ Namespace Kodi
                 End If
 
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return False
             End Try
         End Function
@@ -1166,7 +1177,7 @@ Namespace Kodi
                 End If
 
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return False
             End Try
         End Function
@@ -1292,7 +1303,7 @@ Namespace Kodi
                         End If
                         If bNeedSave Then
                             logger.Trace(String.Format("[APIKodi] [{0}] UpdateTVEpisodeInfo: ""{1}"" | Save Playcount from host", _currenthost.Label, mDBElement.TVEpisode.Title))
-                            Master.DB.SaveTVEpisodeToDB(mDBElement, False, False, True, False, False)
+                            Master.DB.SaveTVEpisodeToDB(mDBElement, False, True, False, False, True)
                             GenericSubEvent.Report(New GenericSubEventCallBackAsync With {
                                                    .tGenericEventCallBackAsync = New GenericEventCallBackAsync With
                                                    {.tEventType = Enums.ModuleEventType.AfterEdit_TVEpisode, .tParams = New List(Of Object)(New Object() {mDBElement.ID})},
@@ -1306,7 +1317,7 @@ Namespace Kodi
                     Return False
                 End If
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return False
             End Try
         End Function
@@ -1396,7 +1407,7 @@ Namespace Kodi
                 End If
 
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return False
             End Try
         End Function
@@ -1562,7 +1573,7 @@ Namespace Kodi
                     Return False
                 End If
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return False
             End Try
         End Function
@@ -1585,7 +1596,7 @@ Namespace Kodi
                 logger.Trace("[APIKodi] CleanVideoLibrary: " & _currenthost.Label)
                 Return response
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -1627,7 +1638,7 @@ Namespace Kodi
                 logger.Trace("[APIKodi] ScanVideoLibrary: " & _currenthost.Label)
                 Return response
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -1707,7 +1718,7 @@ Namespace Kodi
                 Dim response = Await _kodi.GUI.ShowNotification(strTitle, strMessage, 2500).ConfigureAwait(False)
                 Return response
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -1727,7 +1738,7 @@ Namespace Kodi
                 Dim response = Await _kodi.Textures.RemoveTexture(intID)
                 Return response
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -1753,7 +1764,7 @@ Namespace Kodi
                     Return False
                 End If
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return False
             End Try
             Return True
@@ -1776,7 +1787,7 @@ Namespace Kodi
                 logger.Trace(String.Format("[APIKodi] [{0}] IsScanningVideo: {1}", _currenthost.Label, response.IsScanningVideo.ToString))
                 Return response.IsScanningVideo
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return False
             End Try
         End Function
@@ -1855,7 +1866,7 @@ Namespace Kodi
                 Return -1
 
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return -1
             End Try
         End Function
@@ -1883,7 +1894,7 @@ Namespace Kodi
                     Return True
                 End If
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return False
             End Try
         End Function
@@ -1899,7 +1910,7 @@ Namespace Kodi
                 Return Await _kodi.Application.SetMute(False).ConfigureAwait(False)
                 'Await Refresh()
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -1915,7 +1926,7 @@ Namespace Kodi
                 Return Await _kodi.Application.SetMute(True).ConfigureAwait(False)
                 'Await Refresh()
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -1930,7 +1941,7 @@ Namespace Kodi
             Try
                 Return Await _kodi.Application.SetVolume(volume).ConfigureAwait(False)
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -1946,7 +1957,7 @@ Namespace Kodi
                 Dim response = Await _kodi.JSONRPC.Introspect().ConfigureAwait(False)
                 Return response.ToString
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -1962,7 +1973,7 @@ Namespace Kodi
                 Dim response = Await _kodi.Application.GetProperties(Application.GetProperties_properties.AllFields()).ConfigureAwait(False)
                 Return response
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
                 Return Nothing
             End Try
         End Function
@@ -1995,6 +2006,7 @@ Namespace Kodi
 #Region "Nested Types"
 
         Structure PathAndFilename
+            Dim bIsMultiPart As Boolean
             Dim strPath As String
             Dim strFilename As String
         End Structure

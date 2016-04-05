@@ -49,7 +49,7 @@ Public Class KodiInterface
     Private _Enabled As Boolean = False
     Private _Name As String = "Kodi"
     Private _setup As frmSettingsHolder
-    Private _xmlSettingsPath As String = FileUtils.Common.ReturnSettingsFile("Settings", "Interface.Kodi.xml")
+    Private _xmlSettingsPath As String = Path.Combine(Master.SettingsPath, "Interface.Kodi.xml")
     Private cmnuKodi_MovieSets As New ToolStripMenuItem
     Private cmnuKodi_Movies As New ToolStripMenuItem
     Private cmnuKodi_TVEpisodes As New ToolStripMenuItem
@@ -889,7 +889,7 @@ Public Class KodiInterface
                 Try
                     File.SetAttributes(_xmlSettingsPath, FileAttributes.Normal)
                 Catch ex As Exception
-                    logger.Error(New StackFrame().GetMethod().Name, ex)
+                    logger.Error(ex, New StackFrame().GetMethod().Name)
                 End Try
             End If
             Using xmlSW As New StreamWriter(_xmlSettingsPath)

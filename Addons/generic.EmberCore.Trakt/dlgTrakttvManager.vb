@@ -303,16 +303,16 @@ Public Class dlgTrakttvManager
             AddHandler Me.cbotraktListsFavorites.SelectedIndexChanged, AddressOf Me.cbotraktListsFavorites_SelectedIndexChanged
 
             'load kodi interface settings (if exists) since we will use the information of remote path to create a playlist for kodi
-            If File.Exists(FileUtils.Common.ReturnSettingsFile("Settings", "Interface.Kodi.xml")) Then
+            If File.Exists(Path.Combine(Master.SettingsPath, "Interface.Kodi.xml")) Then
                 Dim xmlSer As Xml.Serialization.XmlSerializer = Nothing
-                Using xmlSR As StreamReader = New StreamReader(FileUtils.Common.ReturnSettingsFile("Settings", "Interface.Kodi.xml"))
+                Using xmlSR As StreamReader = New StreamReader(Path.Combine(Master.SettingsPath, "Interface.Kodi.xml"))
                     xmlSer = New Xml.Serialization.XmlSerializer(GetType(Trakt_Generic.SpecialSettings))
                     _SpecialSettings = DirectCast(xmlSer.Deserialize(xmlSR), Trakt_Generic.SpecialSettings)
                 End Using
             End If
 
         Catch ex As Exception
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
         End Try
     End Sub
 
@@ -520,7 +520,7 @@ Public Class dlgTrakttvManager
                 logger.Warn("[btntraktWatchlistGetMovies_Click] No token!")
             End If
         Catch ex As Exception
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
             If Not myWatchlistEpisodes Is Nothing Then
                 myWatchlistEpisodes.Clear()
             End If
@@ -607,7 +607,7 @@ Public Class dlgTrakttvManager
                 logger.Info("[btntraktWatchlistSyncLibrary_Click] No movies in watchlist/Ember database - Abort process!")
             End If
         Catch ex As Exception
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
         End Try
 
     End Sub
@@ -698,7 +698,7 @@ Public Class dlgTrakttvManager
                 MessageBox.Show(Master.eLang.GetString(1365, "No changes made!"), Master.eLang.GetString(356, "Warning"), MessageBoxButtons.OK)
             End If
         Catch ex As Exception
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
         End Try
 
     End Sub
@@ -766,7 +766,7 @@ Public Class dlgTrakttvManager
                 End If
             End If
         Catch ex As Exception
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
         End Try
     End Sub
 
@@ -784,7 +784,7 @@ Public Class dlgTrakttvManager
                 End If
             End If
         Catch ex As Exception
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
         End Try
     End Sub
 
@@ -925,7 +925,7 @@ Public Class dlgTrakttvManager
             myWatchedMovies = Nothing
             myWatchedShows = Nothing
             myWatchedEpisodes = Nothing
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
             btntraktPlaycountSyncWatchedMovies.Enabled = False
             dgvtraktPlaycount.DataSource = Nothing
             dgvtraktPlaycount.Rows.Clear()
@@ -1024,7 +1024,7 @@ Public Class dlgTrakttvManager
             Me.Cursor = Cursors.Default
             dgvtraktPlaycount.Sort(coltraktPlaycountLastWatched, System.ComponentModel.ListSortDirection.Descending)
         Catch ex As Exception
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
             myWatchedMovies = Nothing
             myWatchedShows = Nothing
             myWatchedEpisodes = Nothing
@@ -1424,7 +1424,7 @@ Public Class dlgTrakttvManager
                         Dim tmpMovie As Database.DBElement = Master.DB.LoadMovieFromDB(CLng(srow.Item("idMovie")))
                         tmpMovie.Movie.PlayCount = watchedMovieData.Plays
                         tmpMovie.Movie.LastPlayed = CStr(watchedMovieData.LastWatchedAt)
-                        Master.DB.SaveMovieToDB(tmpMovie, False, False, True, False)
+                        Master.DB.SaveMovieToDB(tmpMovie, False, True, False)
                         Exit For
                     End If
                 Next
@@ -1471,7 +1471,7 @@ Public Class dlgTrakttvManager
                                 If DateTime.TryParse(myDateString, myDate) Then
                                     tmpDBTVEpisode.TVEpisode.LastPlayed = myDate.ToString("yyyy-MM-dd HH:mm:ss")
                                 End If
-                                Master.DB.SaveTVEpisodeToDB(tmpDBTVEpisode, False, True, True, False, False)
+                                Master.DB.SaveTVEpisodeToDB(tmpDBTVEpisode, True, True, False, False, True)
                                 'Updated episode in Ember, next episode please!
                                 Exit For
                             End If
@@ -1556,7 +1556,7 @@ Public Class dlgTrakttvManager
                 End If
             End If
         Catch ex As Exception
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
         End Try
 
     End Sub
@@ -2419,7 +2419,7 @@ Public Class dlgTrakttvManager
                     End If
                 Next
             Catch ex As Exception
-                logger.Error(New StackFrame().GetMethod().Name, ex)
+                logger.Error(ex, New StackFrame().GetMethod().Name)
             End Try
         End If
     End Sub
@@ -3292,7 +3292,7 @@ Public Class dlgTrakttvManager
                 logger.Warn("[btntraktCommentsGet_Click] No token!")
             End If
         Catch ex As Exception
-            logger.Error(New StackFrame().GetMethod().Name, ex)
+            logger.Error(ex, New StackFrame().GetMethod().Name)
             If Not myCommentsMovies Is Nothing Then
                 myCommentsMovies.Clear()
             End If
