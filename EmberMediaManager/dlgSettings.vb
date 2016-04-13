@@ -621,7 +621,7 @@ Public Class dlgSettings
         Catch ex As Exception
             logger.Error(ex, New StackFrame().GetMethod().Name)
         Finally
-            Master.DB.LoadExcludeDirsFromDB()
+            Master.DB.Load_ExcludeDirs()
         End Try
     End Sub
 
@@ -653,7 +653,7 @@ Public Class dlgSettings
         Catch ex As Exception
             logger.Error(ex, New StackFrame().GetMethod().Name)
         Finally
-            Master.DB.LoadExcludeDirsFromDB()
+            Master.DB.Load_ExcludeDirs()
         End Try
     End Sub
 
@@ -1013,7 +1013,7 @@ Public Class dlgSettings
 
     Private Sub btnMovieSourceRemove_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnMovieSourceRemove.Click
         RemoveMovieSource()
-        Master.DB.LoadMovieSourcesFromDB()
+        Master.DB.Load_Sources_Movie()
     End Sub
 
     Private Sub btnMovieScraperDefFIExtAdd_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnMovieScraperDefFIExtAdd.Click
@@ -1733,7 +1733,7 @@ Public Class dlgSettings
 
     Private Sub btnRemTVSource_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnRemTVSource.Click
         RemoveTVSource()
-        Master.DB.LoadTVShowSourcesFromDB()
+        Master.DB.Load_Sources_TVShow()
     End Sub
 
     Private Sub btnTVShowFilterDown_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnTVShowFilterDown.Click
@@ -4472,7 +4472,7 @@ Public Class dlgSettings
     Private Sub RefreshMovieSources()
         Dim lvItem As ListViewItem
         lvMovieSources.Items.Clear()
-        Master.DB.LoadMovieSourcesFromDB()
+        Master.DB.Load_Sources_Movie()
         For Each s As Database.DBSource In Master.MovieSources
             lvItem = New ListViewItem(CStr(s.ID))
             lvItem.SubItems.Add(s.Name)
@@ -4490,7 +4490,7 @@ Public Class dlgSettings
     Private Sub RefreshTVSources()
         Dim lvItem As ListViewItem
         lvTVSources.Items.Clear()
-        Master.DB.LoadTVShowSourcesFromDB()
+        Master.DB.Load_Sources_TVShow()
         For Each s As Database.DBSource In Master.TVShowSources
             lvItem = New ListViewItem(CStr(s.ID))
             lvItem.SubItems.Add(s.Name)
@@ -4620,7 +4620,6 @@ Public Class dlgSettings
                 Functions.GetListOfSources()
 
                 SetApplyButton(True)
-                sResult.NeedsDBClean_Movie = True
             End If
         End If
     End Sub
@@ -4704,7 +4703,7 @@ Public Class dlgSettings
 
     Private Sub RemoveTVSource()
         If lvTVSources.SelectedItems.Count > 0 Then
-            If MessageBox.Show(Master.eLang.GetString(418, "Are you sure you want to remove the selected sources? This will remove the TV Shows from these sources from the Ember database."), Master.eLang.GetString(104, "Are You Sure?"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) = Windows.Forms.DialogResult.Yes Then
+            If MessageBox.Show(Master.eLang.GetString(1033, "Are you sure you want to remove the selected sources? This will remove the tv shows from these sources from the Ember database."), Master.eLang.GetString(104, "Are You Sure?"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) = Windows.Forms.DialogResult.Yes Then
                 lvTVSources.BeginUpdate()
 
                 Using SQLtransaction As SQLite.SQLiteTransaction = Master.DB.MyVideosDBConn.BeginTransaction()
@@ -4723,8 +4722,8 @@ Public Class dlgSettings
                 lvTVSources.Sort()
                 lvTVSources.EndUpdate()
                 lvTVSources.Refresh()
+
                 SetApplyButton(True)
-                sResult.NeedsDBClean_TV = True
             End If
         End If
     End Sub
